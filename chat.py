@@ -6,21 +6,39 @@ from Tkinter import *
 
 connections_list = []
 nick_name = ""
-tk=Tk()
-log = Text(tk)
-nick_name = ""
+log = ""
 
 def main():
     os.system('cls')
-    init_gui() 
+    init_save_name()
 
+
+def init_save_name():
+    global nick_name
+    
+    def save_name(event):
+        global nick_name
+        if (nick.get() != ""):
+            nick_name = nick.get()
+            name_input.destroy()
+            init_gui()
+            
+    name_input = Tk()
+    nick = Entry(name_input)
+    nick.pack(side='top', fill='x', expand='true')
+    ok_button = Button(name_input, text="OK", command=lambda: save_name(""))
+    ok_button.pack(fill=BOTH, expand=1)
+    nick.bind('<Return>',save_name)      
+    name_input.mainloop()
+    
 def search():
+    global nick_name
     sock_server = Server()
     sock_server.start()
     
     log.insert(END, "My ip: " + get_local_address() + "\n")
     log.insert(END, "Online list: \n")
-
+	
     for i in IP('10.77.70.0/24'):
                 if str(i) != str(get_local_address()):
                         result = try_connect(str(i))
@@ -34,32 +52,33 @@ def search():
 def init_gui():
     global log
     global nick_name
+    tk=Tk()
+    log = Text(tk)
     text=StringVar()
-    name=StringVar()
-    name.set('UserName')
-    text.set('')
+    text.set('')    
     tk.title('HummerHeadIEagleIntercepterChat')
     tk.geometry('400x300')
+    nick = Label(tk, text=nick_name)
+    nick.pack(side='bottom', fill='x', expand='true')
     
-    log = Text(tk)
-    nick = Entry(tk, textvariable=name)
     msg = Entry(tk, textvariable=text)
     msg.pack(side='bottom', fill='x', expand='true')
-    nick.pack(side='bottom', fill='x', expand='true')
     log.pack(side='top', fill='both',expand='true')
-    nick_name = name.get()
-    
-    def sendproc(event):
-        log.insert(END,name.get()+':'+text.get()+'\n')
-        
-        if text.get() == "getlist":
-            log.insert(END, str(connections_list) + " " + str(len(connections_list))+"\n")
-        for i in connections_list:
-            i.send((nick_name + ": " + text.get()).encode('UTF8'))
 
+    def sendproc(event):
+        log.insert(END,nick_name +': ' + text.get()+'\n')
+        
+        for i in connections_list:
+                i.send((nick_name + ": " + text.get()).encode("UTF8"))
         text.set('')
-    
+    def handler(): 
+        for i in connections_list:
+            i.send((nick_name + ": left the chat.").encode("UTF8"))
+        tk.destroy()
+        
+    tk.protocol("WM_DELETE_WINDOW", handler)
     msg.bind('<Return>',sendproc)
+    tk.bind('<Escape>', lambda: tk.destroy())
     search()
     tk.mainloop()
 
@@ -69,7 +88,7 @@ def try_connect(ip):
         sock_connect.settimeout(0.01)
         sock_connect.connect((ip, 6666))
         sock_connect.settimeout(None)
-        sock_connect.send(nick_name.encode("UTF8"))
+        sock_connect.send((nick_name + " entered chat.").encode("UTF8"))
         data = sock_connect.recv(1024).decode()
         return sock_connect
     except BaseException:
@@ -81,6 +100,7 @@ def get_local_address():
 class Server(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
+        self.nick_name = nick_name
         self.sock = socket.socket()
         self.sock.bind(('', 6666))
         self.sock.listen(1)
@@ -111,4 +131,4 @@ class Listner (threading.Thread):
                     break
 
 if __name__ == "__main__":
-main()
+	main()
