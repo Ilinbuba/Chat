@@ -1,3 +1,4 @@
+# -*- coding: cp1251 -*-
 from IPy import IP
 import socket
 import os
@@ -53,21 +54,26 @@ def init_gui():
     global log
     global nick_name
     tk=Tk()
-    log = Text(tk)
     text=StringVar()
     text.set('')    
-    tk.title('HummerHeadIEagleIntercepterChat')
+    tk.title('HummerHeadEagleIntercepterChat')
     tk.geometry('400x300')
     nick = Label(tk, text=nick_name)
     nick.pack(side='bottom', fill='x', expand='true')
+    scrollbar = Scrollbar(tk)
+    scrollbar.pack(side=RIGHT, fill=Y)
+    log = Listbox(tk, bg='black', fg='green')
+    log.pack(side='top', fill='both',expand='true')
+    
+    scrollbar['command'] = log.yview
+    log['yscrollcommand'] = scrollbar.set
     
     msg = Entry(tk, textvariable=text)
-    msg.pack(side='bottom', fill='x', expand='true')
-    log.pack(side='top', fill='both',expand='true')
+    msg.pack(side='bottom', fill='x', expand='true')   
 
     def sendproc(event):
         log.insert(END,nick_name +': ' + text.get()+'\n')
-        
+        log.see("end")
         for i in connections_list:
                 i.send((nick_name + ": " + text.get()).encode("UTF8"))
         text.set('')
@@ -126,6 +132,7 @@ class Listner (threading.Thread):
                     data = self.connect.recv(1024).decode('UTF8')
                     if data != "":
                             log.insert(END, data + "\n")
+                            log.see("end")
                 except BaseException:
                     connections_list.remove(self.connect)
                     break
